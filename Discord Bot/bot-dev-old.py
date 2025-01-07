@@ -47,11 +47,18 @@ async def on_ready():
 
 
 # Parrot
+# Slash
 @bot.tree.command(name = "parrot", description = "Repeat what you said")
 @app_commands.describe(repeat = "What should I repeat?")
 async def parrot(interaction: discord.Interaction, repeat: str):
     await interaction.response.send_message(repeat)
-    print(f'{tc.log}Parrot{tc.clear} "{repeat}"\n')
+    print(f'{tc.log}Parrot (Slash){tc.clear} "{repeat}"\n')
+
+# Old
+@bot.command()
+async def p(ctx, *, arg):
+    await ctx.reply(arg)
+    print(f'{tc.log}Parrot (Old){tc.clear} "{arg}"\n')
 # End Parrot
 
 
@@ -125,13 +132,26 @@ def ai_data_process(response):
 async def ai(interaction: discord.Interaction, ask: str):
     await interaction.response.defer()
     
-    print(f'{tc.header} AI Chat {tc.clear}\n{tc.log}Request{tc.clear} "{ask}"')
+    print(f'{tc.header}AI Chat (Slash){tc.clear}\n{tc.log}Request{tc.clear} "{ask}"')
     response = model.generate_content(ask)
     
     ai_data_process(response)
     
     for send in ai_send:
         await interaction.followup.send(send)
+        print(f'{tc.log}Respond{tc.clear} "{send}"')
+    print("\n")
+
+# Old
+@bot.command()
+async def ai(ctx, *, arg):
+    print(f'{tc.header}AI Chat (Old){tc.clear}\n{tc.log}Request{tc.clear} "{arg}"')
+    response = model.generate_content(arg)
+    
+    ai_data_process(response)
+    
+    for send in ai_send:
+        await ctx.reply(send)
         print(f'{tc.log}Respond{tc.clear} "{send}"')
     print("\n")
 # End AI Chat
@@ -189,12 +209,33 @@ async def hitokoto(interaction: discord.Interaction, category: Category = None, 
     else:
         request = f'{hitokoto_api}?c={category.value}&c={categories}&min_length={minimum_length}&max_length={maximum_length}'
 
-    print(f'{tc.header} Hitokoto {tc.clear}\n{tc.log}Request{tc.clear} "{request}"')
+    print(f'{tc.header}Hitokoto (Slash){tc.clear}\n{tc.log}Request{tc.clear} "{request}"')
     response = requests.get(request)
 
     h_data_process(response)
     
     await interaction.followup.send(h_send)
+    print(f'{tc.log}Respond{tc.clear} "{h_send}"\n')
+
+#Old
+@bot.command()
+async def h(ctx, *, arg = ""):
+    category = ""; minimum_length = ""; maximum_length = ""
+    params = arg.split("/")
+    if len(params) >= 1:
+        category = params[0].replace(" ", "")
+    if len(params) >= 2:
+        minimum_length = params[1]
+    if len(params) >= 3:
+        maximum_length = params[2]
+    
+    request = f'{hitokoto_api}?c={category}&min_length={minimum_length}&max_length={maximum_length}'
+    print(f'{tc.header}Hitokoto (Old){tc.clear}\n{tc.log}Request{tc.clear} "{request}"')
+    response = requests.get(request)
+
+    h_data_process(response)
+    
+    await ctx.reply(h_send)
     print(f'{tc.log}Respond{tc.clear} "{h_send}"\n')
 # End Hitokoto
 
