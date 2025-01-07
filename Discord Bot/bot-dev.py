@@ -1,5 +1,5 @@
 # Import dependencies
-import discord, requests, codecs, enum, typing
+import discord, requests, codecs, enum
 from discord import app_commands
 from discord.ext import commands
 
@@ -195,7 +195,7 @@ def h_data_process(response):
 # Slash
 @bot.tree.command(name = "hitokoto", description = "Get 'Chicken Soup for the Soul'")
 @app_commands.describe(category = "Select one type of 'Hitokoto'", categories = "Select multiple types of 'Hitokoto'", minimum_length = "Minimum length of 'Hitokoto'", maximum_length = "Maximum length of 'Hitokoto'")
-async def hitokoto(interaction: discord.Interaction, category: typing.Optional[Category], categories: typing.Optional[str], minimum_length: typing.Optional[int], maximum_length: typing.Optional[int]):
+async def hitokoto(interaction: discord.Interaction, category: Category = None, categories: str = None, minimum_length: int = None, maximum_length: int = None):
     await interaction.response.defer()
 
     if categories == None:
