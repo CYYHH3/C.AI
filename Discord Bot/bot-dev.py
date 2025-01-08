@@ -109,7 +109,9 @@ def ai_data_process(response):
         except:
             pass
 
-    if response._done == True:
+    if response == "Error!!!!!":
+        ai_send = ["Sorry, something went wrong. We’re working on getting this fixed as soon as we can."]
+    elif response._done == True:
         answer = response.text
 
         if len(repr(answer)[1:-1]) > 2000:
@@ -121,12 +123,29 @@ def ai_data_process(response):
 
 # Slash
 @bot.tree.command(name = "ai", description = "Ask AI")
-@app_commands.describe(ask = "What do you want to ask?")
-async def ai(interaction: discord.Interaction, ask: str):
+@app_commands.describe(ask = "What do you want to ask?", attachment = "Attach attachment")
+async def ai(interaction: discord.Interaction, ask: str, attachment: discord.Attachment = None):
     await interaction.response.defer()
+
+    if attachment == None:
+        request = ask
+        request_display = f'"{ask}"'
+    else:
+        await interaction.followup.send(f"**Attachment Received:** {attachment}")
+
+        file = await attachment.to_file()
+        file = file.fp
+
+        file = genai.upload_file(file, mime_type = attachment.content_type)
+
+        request = request_display = [ask, file]
     
-    print(f'{tc.header} AI Chat {tc.clear}\n{tc.log}Request{tc.clear} "{ask}"')
-    response = model.generate_content(ask)
+    print(f'{tc.header} AI Chat {tc.clear}\n{tc.log}Request{tc.clear} {request_display}')
+
+    try:
+        response = model.generate_content(request)
+    except:
+        response = "Error!!!!!"
     
     ai_data_process(response)
     
