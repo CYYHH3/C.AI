@@ -1,5 +1,5 @@
 # Import dependencies
-import discord, requests, codecs, enum
+import discord, requests, codecs, enum, os
 from discord import app_commands
 from discord.ext import commands
 
@@ -13,7 +13,6 @@ import google.generativeai as genai
 # GeminiAPIKey = "__Key__"
 
 # Dev
-import os
 BotToken = os.environ["DISCORD_TESTBOT_TOKEN"]
 GeminiAPIKey = os.environ["GEMINI_API_KEY"]
 # End environment
@@ -26,6 +25,11 @@ class tc:
     resp = '\033[34m'
     clear = '\033[0m'
 # End console text colors
+
+
+# Get console length
+consoleLength = os.get_terminal_size().columns
+# End get console length
 
 
 # Bot init
@@ -51,7 +55,7 @@ async def on_ready():
 @app_commands.describe(repeat = "What should I repeat?")
 async def parrot(interaction: discord.Interaction, repeat: str):
     await interaction.response.send_message(repeat)
-    print(f'{tc.log}Parrot{tc.clear} "{repeat}"\n')
+    print("—" * consoleLength + f'{tc.log}Parrot{tc.clear} "{repeat}"' + "—" * consoleLength + "\n")
 # End Parrot
 
 
