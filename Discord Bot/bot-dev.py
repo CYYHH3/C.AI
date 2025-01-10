@@ -55,7 +55,7 @@ async def on_ready():
 @app_commands.describe(repeat = "What should I repeat?")
 async def parrot(interaction: discord.Interaction, repeat: str):
     await interaction.response.send_message(repeat)
-    print("—" * consoleLength + f'{tc.log}Parrot{tc.clear} "{repeat}"' + "—" * consoleLength + "\n")
+    print("—" * consoleLength + f'{tc.log}Parrot{tc.clear} "{repeat}"\n' + "—" * consoleLength)
 # End Parrot
 
 
