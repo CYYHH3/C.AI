@@ -144,7 +144,7 @@ async def ai(interaction: discord.Interaction, ask: str, attachment: discord.Att
 
         request = request_display = [ask, file]
     
-    print(f'{tc.header} AI Chat {tc.clear}\n{tc.log}Request{tc.clear} {request_display}')
+    print("—" * consoleLength + f'\n{tc.header} AI Chat {tc.clear}\n{tc.log}Request{tc.clear} {request_display}')
 
     try:
         response = model.generate_content(request)
@@ -156,7 +156,7 @@ async def ai(interaction: discord.Interaction, ask: str, attachment: discord.Att
     for send in ai_send:
         await interaction.followup.send(send)
         print(f'{tc.log}Respond{tc.clear} "{send}"')
-    print("\n")
+    print("—" * consoleLength)
 # End AI Chat
 
 
@@ -212,13 +212,13 @@ async def hitokoto(interaction: discord.Interaction, category: Category = None, 
     else:
         request = f'{hitokoto_api}?c={category.value}&c={categories}&min_length={minimum_length}&max_length={maximum_length}'
 
-    print(f'{tc.header} Hitokoto {tc.clear}\n{tc.log}Request{tc.clear} "{request}"')
+    print("—" * consoleLength + f'\n{tc.header} Hitokoto {tc.clear}\n{tc.log}Request{tc.clear} "{request}"')
     response = requests.get(request)
 
     h_data_process(response)
     
     await interaction.followup.send(h_send)
-    print(f'{tc.log}Respond{tc.clear} "{h_send}"\n')
+    print(f'{tc.log}Respond{tc.clear} "{h_send}"\n' + "—" * consoleLength)
 # End Hitokoto
 
 
