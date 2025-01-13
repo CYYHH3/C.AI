@@ -1,5 +1,5 @@
 # Import dependencies
-import discord, requests, codecs, enum, os
+import discord, requests, codecs, os
 from discord import app_commands
 from discord.ext import commands
 
@@ -164,20 +164,6 @@ async def ai(interaction: discord.Interaction, ask: str, attachment: discord.Att
 # Hitokoto API
 hitokoto_api = "https://v1.hitokoto.cn/"
 
-class Category(enum.Enum):
-    动画 = "a"
-    漫画 = "b"
-    游戏 = "c"
-    文学 = "d"
-    原创 = "e"
-    来自网络 = "f"
-    其他 = "g"
-    影视 = "h"
-    诗词 = "i"
-    网易云 = "j"
-    哲学 = "k"
-    抖机灵 = "l"
-
 # Function to process data got from Hitokoto API
 def h_data_process(response):
     global h_send
@@ -198,7 +184,21 @@ def h_data_process(response):
 # Slash
 @bot.tree.command(name = "hitokoto", description = "Get 'Chicken Soup for the Soul'")
 @app_commands.describe(category = "Select one type of 'Hitokoto'", categories = "Select multiple types of 'Hitokoto'", minimum_length = "Minimum length of 'Hitokoto'", maximum_length = "Maximum length of 'Hitokoto'")
-async def hitokoto(interaction: discord.Interaction, category: Category = None, categories: str = None, minimum_length: int = None, maximum_length: int = None):
+@app_commands.choices(category = [
+    app_commands.Choice(name = "动画", value = "a"),
+    app_commands.Choice(name = "漫画", value = "b"),
+    app_commands.Choice(name = "游戏", value = "c"),
+    app_commands.Choice(name = "文学", value = "d"),
+    app_commands.Choice(name = "原创", value = "e"),
+    app_commands.Choice(name = "来自网络", value = "f"),
+    app_commands.Choice(name = "其他", value = "g"),
+    app_commands.Choice(name = "影视", value = "h"),
+    app_commands.Choice(name = "诗词", value = "i"),
+    app_commands.Choice(name = "网易云", value = "j"),
+    app_commands.Choice(name = "哲学", value = "k"),
+    app_commands.Choice(name = "抖机灵", value = "l")
+])
+async def hitokoto(interaction: discord.Interaction, category: app_commands.Choice[str] = None, categories: str = None, minimum_length: int = None, maximum_length: int = None):
     await interaction.response.defer()
 
     if categories == None:
