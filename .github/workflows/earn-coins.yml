@@ -25,6 +25,10 @@ jobs:
         pip install -r requirements.txt
 
     - name: 4. Earn coins
+      env:
+        WEBSHARE_PROXY: ${{ secrets.WEBSHARE_PROXY }}
+        YESCAPTCHA_CLIENTKEY: ${{ secrets.YESCAPTCHA_CLIENTKEY }}
+        BOT_HOSTING_TOKEN: ${{ secrets.BOT_HOSTING_TOKEN }}
       run: |
         python .github/scripts/earn-coins/earn-coins.py
 
