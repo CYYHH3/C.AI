@@ -2,7 +2,7 @@ name: Bot-Hosting.net Earn Coins
 
 on:
   schedule:
-    - cron: '0 23 * * *' # 每日23点（UTC时间）执行
+    - cron: '30 0 * * *' # 每日0点30分（UTC时间）执行
   workflow_dispatch: # 允许手动触发
 
 jobs:
