@@ -98,7 +98,9 @@ freeCoinsStatus = getFreeCoinsStatus()
 claimable = freeCoinsStatus.get("claimable")
 coinsClaimed = freeCoinsStatus.get("coinsClaimed")
 captcha = freeCoinsStatus.get("captcha")
-target = coinsOwned + 10 - coinsClaimed
+
+if claimable and coinsClaimed == 10:
+    coinsClaimed = 0
 
 print()
 print(f"Coins owned: {coinsOwned}")
@@ -138,15 +140,13 @@ if claimable and coinsClaimed < 10:
             
             # 提取结果
             solution = result.get("solution")
-            h_captcha_response = {"hCaptchaResponse": solution.get("respKey")}
+            h_captcha_response = {"hCaptchaResponse": solution.get("gRecaptchaResponse")}
 
             captcha_count += 1
         elif captcha and captcha_count >= 2:
             break
         print(f"Claiming {coinsClaimed + 1}/10 coins...")
-        newheaders = headers.copy()
-        newheaders.update({"content-type": "application/json"})
-        requests.post(earnCoins_API, headers=newheaders, cookies=cookies, proxies=proxies, json=h_captcha_response)
+        requests.post(earnCoins_API, headers=headers, cookies=cookies, proxies=proxies, json=h_captcha_response)
 
         freeCoinsStatus = getFreeCoinsStatus()
         claimable = freeCoinsStatus.get("claimable")
