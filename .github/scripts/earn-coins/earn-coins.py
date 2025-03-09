@@ -1,42 +1,35 @@
 import os, requests, time, json
 
 
-# Set up variables
 # Webshare Proxy
 proxies = {
     "http": os.environ["WEBSHARE_PROXY"],
     "https": os.environ["WEBSHARE_PROXY"]
 }
 
-# Yes, Captcha!
-clientKey = os.environ["YESCAPTCHA_CLIENTKEY"]
-createTask_API = "https://api.yescaptcha.com/createTask"
-getTask_API = "https://api.yescaptcha.com/getTaskResult"
-
-# Bot-Hosting.net
-Bot_Hosting_token = os.environ["BOT_HOSTING_TOKEN"]
-websiteKey = "21335a07-5b97-4a79-b1e9-b197dc35017a"
-login_URL = "https://bot-hosting.net/login"
-earnCoins_URL = "https://bot-hosting.net/panel/earn"
-freeCoinStatus_API = "https://bot-hosting.net/api/freeCoinsStatus"
-earnCoins_API = "https://bot-hosting.net/api/freeCoins"
-me_API = "https://bot-hosting.net/api/me"
-# End of variables
-
 
 # Yes, Captcha! class
 class yesCaptcha:
-    def __init__(self, clientKey, createTask_API, getTask_API):
-        self.clientKey = clientKey
-        self.createTask_API = createTask_API
-        self.getTask_API = getTask_API
+    def __init__(self):
+        self.clientKey = os.environ["YESCAPTCHA_CLIENTKEY"]
+        self.createTask_API = "https://api.yescaptcha.com/createTask"
+        self.getTask_API = "https://api.yescaptcha.com/getTaskResult"
+
+        self.solved_captchas_count = 0
+        self.max_solved_captchas = 3
 
     def createTask(self, task):
+        if self.solved_captchas_count >= self.max_solved_captchas:
+            raise ValueError("Reached maximum number of solved captchas.")
+        
         task_info = {
             "clientKey": self.clientKey,
             "task": task,
             "softID": 60167
         }
+
+        self.solved_captchas_count += 1
+
         return requests.post(self.createTask_API, json=task_info).json()
 
     def getTaskResult(self, taskId):
@@ -53,116 +46,154 @@ class yesCaptcha:
         return requests.post("https://api.yescaptcha.com/getBalance", json=balance_info).json().get("balance")
 
 
+# Bot-Hosting.net class
+class botHosting:
+    def __init__(self, proxies = {}, headers = {}, cookies = {}):
+        self.Bot_Hosting_token = os.environ["BOT_HOSTING_TOKEN"]
+
+        self.login_URL = "https://bot-hosting.net/login"
+        self.earnCoins_URL = "https://bot-hosting.net/panel/earn"
+
+        self.freeCoinsStatus_API = "https://bot-hosting.net/api/freeCoinsStatus"
+        self.earnCoins_API = "https://bot-hosting.net/api/freeCoins"
+        self.me_API = "https://bot-hosting.net/api/me"
+
+        self.hCaptcha_siteKey = "21335a07-5b97-4a79-b1e9-b197dc35017a"
+
+        self.proxies = proxies
+        self.headers = headers
+        self.cookies = cookies
+
+        self.coinsClaimed_local = 0
+        self.coinsOwned = None
+        self.claimable = None
+        self.coinsClaimed = None
+        self.captcha = None
+
+        if proxies != {} and headers != {} and cookies != {}:
+            self.getCoinsOwned()
+            self.getFreeCoinsStatus()
+    
+    def getCoinsOwned(self):
+        self.coinsOwned = requests.get(self.me_API, headers=self.headers, cookies=self.cookies, proxies=self.proxies).json().get("coins")
+        return self.coinsOwned
+
+    def getFreeCoinsStatus(self):
+        freeCoinsStatus = requests.get(self.freeCoinsStatus_API, headers=self.headers, cookies=self.cookies, proxies=self.proxies).json()
+        self.claimable = freeCoinsStatus.get("claimable")
+        self.coinsClaimed = freeCoinsStatus.get("coinsClaimed")
+        self.captcha = freeCoinsStatus.get("captcha")
+        return freeCoinsStatus
+    
+    def earnCoins(self, h_captcha_response):
+        requests.post(self.earnCoins_API, headers=self.headers, cookies=self.cookies, proxies=self.proxies, json=h_captcha_response).json()
+        self.coinsClaimed_local += 1
+        self.getFreeCoinsStatus()
+
+
+########## Start main program ##########
+
+
 # Create Yes, Captcha! object
-yesCaptcha = yesCaptcha(clientKey, createTask_API, getTask_API)
+yesCaptcha = yesCaptcha()
+
+# Create dummy botHosting object
+botHost = botHosting()
 
 
-print("Solving captcha...")
+# 创建 Yes, Captcha! Cloudflare 5秒盾 任务
+print("Bypassing Cloudflare protection...")
 
-
-# 创建 Yes, Captcha! 任务
-task_info = {
-    "type": "CloudFlareTaskS2",
-    "websiteURL": login_URL,
+cf_task_info = {
+    "type": "CloudFlareTaskS3",
+    "websiteURL": botHost.login_URL,
     "proxy": proxies["https"],
 }
-task = yesCaptcha.createTask(task_info)
+cf_task = yesCaptcha.createTask(cf_task_info)
 
-
-# 获取任务结果
+# 获取 Yes, Captcha! Cloudflare 5秒盾 任务结果
 for i in range(30):
     time.sleep(3)
-    print("Solving captcha...")
-    result = yesCaptcha.getTaskResult(task.get("taskId"))
-    if result.get('status') == 'processing':
+    print("Bypassing Cloudflare protection...")
+    cf_task_result = yesCaptcha.getTaskResult(cf_task.get("taskId"))
+    if cf_task_result.get('status') == 'processing':
         continue
-    elif result.get('status') == 'ready':
+    elif cf_task_result.get('status') == 'ready':
         break
     else:
-        raise Exception(result)
+        raise Exception(cf_task_result)
+
+# 提取结果 & 更新 headers 和 cookies
+headers = cf_task_result.get("solution").get("request_headers")
+del headers["Accept-Encoding"]
+headers.update({"authorization": botHost.Bot_Hosting_token})
+cookies = cf_task_result.get("solution").get("cookies")
+
+# Create real botHosting object
+botHosting = botHosting(proxies, headers, cookies)
 
 
-# 提取结果
-solution = result.get("solution")
-headers = {"user-agent": solution.get("request_headers").get("user-agent")}
-headers.update({"authorization": Bot_Hosting_token})
-cookies = solution.get("cookies")
-
-
-# Earn coins if possible
-getFreeCoinsStatus = lambda: requests.get(freeCoinStatus_API, headers=headers, cookies=cookies, proxies=proxies).json()
-myCoins = lambda: requests.get(me_API, headers=headers, cookies=cookies, proxies=proxies).json().get("coins")
-
-coinsOwned = myCoins()
-freeCoinsStatus = getFreeCoinsStatus()
-claimable = freeCoinsStatus.get("claimable")
-coinsClaimed = freeCoinsStatus.get("coinsClaimed")
-captcha = freeCoinsStatus.get("captcha")
-
-if claimable and coinsClaimed == 10:
-    coinsClaimed = 0
-
+# Display account info
 print()
-print(f"Coins owned: {coinsOwned}")
-print(f"Claimable: {claimable}")
-print(f"Coins claimed: {coinsClaimed}/10")
+print(f"Coins owned: {botHosting.coinsOwned}")
+print(f"Claimable: {botHosting.claimable}")
 print()
 
-captcha_count = 0
+if botHosting.coinsOwned == None and botHosting.claimable == None and botHosting.coinsClaimed == None:
+    print("Failed to get data. Exiting...")
+    exit()
 
-if claimable and coinsClaimed < 10:
-    while claimable and coinsClaimed < 10:
+
+# Claim free coins if available
+if botHosting.claimable:
+    while botHosting.claimable:
         time.sleep(10)
         h_captcha_response = {}
 
-        if captcha and captcha_count < 2:
+        if botHosting.captcha:
             print("Solving hCaptcha...")
 
-            # 创建 Yes, Captcha! 任务
-            task_info = {
-                "type": "HCaptchaTaskProxyless",
-                "websiteURL": earnCoins_URL,
-                "websiteKey": websiteKey,
-            }
-            task = yesCaptcha.createTask(task_info)
+            try:
+                # 创建 Yes, Captcha! hCaptcha 任务
+                task_info = {
+                    "type": "HCaptchaTaskProxyless",
+                    "websiteURL": botHosting.earnCoins_URL,
+                    "websiteKey": botHosting.hCaptcha_siteKey,
+                }
+                task = yesCaptcha.createTask(task_info)
 
-            # 获取任务结果
-            for i in range(30):
-                time.sleep(3)
-                print("Solving hCaptcha...")
-                result = yesCaptcha.getTaskResult(task.get("taskId"))
-                if result.get('status') == 'processing':
-                    continue
-                elif result.get('status') == 'ready':
-                    break
-                else:
-                    raise Exception(result)
-            
-            # 提取结果
-            solution = result.get("solution")
-            h_captcha_response = {"hCaptchaResponse": solution.get("gRecaptchaResponse")}
-
-            captcha_count += 1
-        elif captcha and captcha_count >= 2:
-            break
-        print(f"Claiming {coinsClaimed + 1}/10 coins...")
-        requests.post(earnCoins_API, headers=headers, cookies=cookies, proxies=proxies, json=h_captcha_response)
-
-        freeCoinsStatus = getFreeCoinsStatus()
-        claimable = freeCoinsStatus.get("claimable")
-        coinsClaimed = freeCoinsStatus.get("coinsClaimed")
-        captcha = freeCoinsStatus.get("captcha")
+                # 获取任务结果
+                for i in range(30):
+                    time.sleep(3)
+                    print("Solving hCaptcha...")
+                    result = yesCaptcha.getTaskResult(task.get("taskId"))
+                    if result.get('status') == 'processing':
+                        continue
+                    elif result.get('status') == 'ready':
+                        break
+                    else:
+                        raise Exception(result)
+                
+                # 提取结果
+                solution = result.get("solution")
+                h_captcha_response = {"hCaptchaResponse": solution.get("gRecaptchaResponse")}
+            except ValueError as e:
+                print(e)
+                break
+        
+        print(f"Claiming coin {botHosting.coinsClaimed_local + 1}...")
+        botHosting.earnCoins(h_captcha_response)
 else:
     print("No free coins available.")
 
 
-# Get and store data
-coinsOwned = myCoins()
-yesCaptcha_balance = yesCaptcha.getBalance()
-
+# Display account info
 print()
-print(f"Coins owned: {coinsOwned}")
-print(f"Yes, Captcha! 账户余额: {yesCaptcha_balance}")
+print(f"Coins claimed: {botHosting.coinsClaimed}/10")
+print(f"Coins owned: {botHosting.getCoinsOwned()}")
+print(f"Yes, Captcha! 账户余额: {yesCaptcha.getBalance()}")
+
+
 
 with open("discord-webhook-msg.json", "w") as f:
     discord_webhook_msg = {
@@ -174,11 +205,11 @@ with open("discord-webhook-msg.json", "w") as f:
                 "fields": [
                     {
                         "name": "Coins Owned",
-                        "value": coinsOwned
+                        "value": botHosting.coinsOwned
                     },
                     {
                         "name": "Yes, Captcha! 账户余额",
-                        "value": yesCaptcha_balance
+                        "value": yesCaptcha.getBalance()
                     }
                 ]
             }
