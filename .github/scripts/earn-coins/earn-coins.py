@@ -139,9 +139,8 @@ print(f"Coins owned: {botHosting.coinsOwned}")
 print(f"Claimable: {botHosting.claimable}")
 print()
 
-if botHosting.coinsOwned == None and botHosting.claimable == None and botHosting.coinsClaimed == None:
-    print("Failed to get data. Exiting...")
-    exit()
+if (botHosting.coinsOwned == None) and (botHosting.claimable == None) and (botHosting.coinsClaimed == None):
+    raise Exception("Failed to get data. Exiting...")
 
 
 # Claim free coins if available
