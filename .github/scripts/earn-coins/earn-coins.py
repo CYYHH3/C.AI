@@ -140,7 +140,8 @@ print(f"Claimable: {botHosting.claimable}")
 print()
 
 if (botHosting.coinsOwned == None) and (botHosting.claimable == None) and (botHosting.coinsClaimed == None):
-    raise Exception("Failed to get data. Exiting...")
+    print("Failed to get coin data. Exiting...")
+    raise Exception("Failed to get coin data.")
 
 
 # Claim free coins if available
